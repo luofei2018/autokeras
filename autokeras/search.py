@@ -174,12 +174,9 @@ class Searcher:
             print('+' + '-' * 46 + '+')
             print('|' + 'Training model {}'.format(model_id).center(46) + '|')
             print('+' + '-' * 46 + '+')
-        mp.set_start_method('spawn', force=True)
-        pool = mp.Pool(1)
+       
         try:
-            train_results = pool.map_async(train, [(graph, train_data, test_data, self.trainer_args,
-                                                    os.path.join(self.path, str(model_id) + '.png'),
-                                                    self.metric, self.loss, self.verbose)])
+            train_results = train((graph, train_data, test_data, self.trainer_args, os.path.join(self.path, str(model_id) + '.png'), self.metric, self.loss, self.verbose))
 
             # Do the search in current thread.
             searched = False

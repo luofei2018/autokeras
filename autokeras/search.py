@@ -221,10 +221,6 @@ class Searcher:
                 print('\nCurrent model size is too big. Discontinuing training this model to search for other models.')
             Constant.MAX_MODEL_SIZE = graph.size() - 1
             return
-        finally:
-            # terminate and join the subprocess to prevent any resource leak
-            pool.close()
-            pool.join()
 
     def export_json(self, path):
         data = dict()

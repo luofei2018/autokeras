@@ -5,7 +5,7 @@ from functools import reduce
 import numpy as np
 import torch
 from torchvision import utils as vutils
-from tqdm.autonotebook import tqdm
+from tqdm import trange
 
 from autokeras.constant import Constant
 from autokeras.utils import EarlyStop, get_device
@@ -112,14 +112,6 @@ class ModelTrainer(ModelTrainerBase):
         self.current_epoch += 1
 
         cp_loader = deepcopy(loader)
-        if self.verbose:
-            progress_bar = tqdm(total=len(cp_loader),
-                                desc='Epoch-' + str(self.current_epoch) + ', Current Metric - ' + str(self.current_metric_value),
-                                file=sys.stdout,
-                                leave=False,
-                                ncols=100,
-                                position=0,
-                                unit=' batch')
 
         for batch_idx, (inputs, targets) in enumerate(cp_loader):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
@@ -128,11 +120,6 @@ class ModelTrainer(ModelTrainerBase):
             loss = self.loss_function(outputs, targets)
             loss.backward()
             self.optimizer.step()
-            if self.verbose:
-                if batch_idx % 10 == 0:
-                    progress_bar.update(10)
-        if self.verbose:
-            progress_bar.close()
 
     def _test(self):
         self.model.eval()
@@ -183,33 +170,15 @@ class GANModelTrainer(ModelTrainerBase):
                     max_no_improvement_num=Constant.MAX_NO_IMPROVEMENT_NUM):
         self.optimizer_d = torch.optim.Adam(self.d_model.parameters())
         self.optimizer_g = torch.optim.Adam(self.g_model.parameters())
-        if self.verbose:
-            pbar = tqdm(total=max_iter_num,
-                        desc='     Model     ',
-                        file=sys.stdout,
-                        ncols=75,
-                        position=1,
-                        unit=' epoch')
         for epoch in range(max_iter_num):
             self._train(epoch)
-            if self.verbose:
-                pbar.update(1)
-        if self.verbose:
-            pbar.close()
 
     def _train(self, epoch):
         # put model into train mode
         self.d_model.train()
         # TODO: why?
         cp_loader = deepcopy(self.train_loader)
-        if self.verbose:
-            pbar = tqdm(total=len(cp_loader),
-                        desc='Current Epoch',
-                        file=sys.stdout,
-                        leave=False,
-                        ncols=75,
-                        position=0,
-                        unit=' Batch')
+
         real_label = 1
         fake_label = 0
         for batch_idx, inputs in enumerate(cp_loader):
@@ -240,14 +209,9 @@ class GANModelTrainer(ModelTrainerBase):
             loss_g.backward()
             self.optimizer_g.step()
 
-            if self.verbose:
-                if batch_idx % 10 == 0:
-                    pbar.update(10)
             if self.outf is not None and batch_idx % 100 == 0:
                 fake = self.g_model(self.sample_noise)
                 vutils.save_image(
                     fake.detach(),
                     '%s/fake_samples_epoch_%03d.png' % (self.outf, epoch),
                     normalize=True)
-        if self.verbose:
-            pbar.close()
